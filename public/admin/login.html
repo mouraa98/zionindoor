@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - TV Indoor Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <style>
+    .login-bg {
+      background: linear-gradient(135deg, #1e3a8a, #0284c7);
+    }
+  </style>
+</head>
+<body class="login-bg min-h-screen flex items-center justify-center px-4">
+
+  <div class="bg-white w-full max-w-md rounded-xl shadow-2xl p-8 space-y-6">
+    <div class="text-center">
+      <h1 class="text-3xl font-bold text-gray-800">Zion</h1>
+      <p class="text-gray-500 text-sm">Painel Administrativo</p>
+    </div>
+
+    <form id="loginForm" class="space-y-4">
+      <div>
+        <label for="email" class="block text-sm font-medium text-gray-700">E-mail</label>
+        <div class="relative mt-1">
+          <input type="email" id="email" required
+            class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 focus:outline-none"
+            placeholder="seuemail@exemplo.com" />
+          <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+            <i class="fas fa-envelope text-gray-400"></i>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label for="password" class="block text-sm font-medium text-gray-700">Senha</label>
+        <div class="relative mt-1">
+          <input type="password" id="password" required
+            class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 focus:outline-none"
+            placeholder="••••••••" />
+          <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+            <i class="fas fa-lock text-gray-400"></i>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <button type="submit"
+          class="w-full flex justify-center py-2 px-4 rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+          Entrar
+        </button>
+      </div>
+    </form>
+
+    <div id="errorMessage" class="text-sm text-red-600 text-center hidden"></div>
+
+    <div class="text-center">
+      <a href="/admin/register.html" class="text-sm text-blue-600 hover:text-blue-800">Não tem uma conta? Crie uma agora</a>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const errorElement = document.getElementById('errorMessage');
+
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Erro no login');
+        }
+
+        const data = await response.json();
+
+        if (data.token) {
+          document.cookie = `token=${data.token}; path=/; max-age=${8 * 60 * 60}; Secure; SameSite=Strict`;
+        }
+
+        window.location.href = '/admin';
+
+      } catch (error) {
+        errorElement.textContent = error.message;
+        errorElement.classList.remove('hidden');
+        setTimeout(() => errorElement.classList.add('hidden'), 4000);
+      }
+    });
+  </script>
+
+</body>
+</html>

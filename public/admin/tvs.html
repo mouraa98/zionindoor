@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painéis de TV - TV Indoor</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="/admin/css/tvs.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+
+  <!-- Topbar com botão hamburguer -->
+  <div class="md:hidden bg-blue-800 text-white flex items-center justify-between px-4 py-3">
+    <h1 class="text-xl font-bold">Painel Zion</h1>
+    <button id="menuToggle" class="text-white focus:outline-none text-2xl">
+      <i class="fas fa-bars"></i>
+    </button>
+  </div>
+
+  <div class="flex h-screen overflow-hidden">
+
+    <!-- Sidebar -->
+    <div id="sidebar" class="bg-blue-800 text-white w-64 p-4 space-y-4 fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out z-50">
+      <h1 class="text-2xl font-bold mb-8 hidden md:block">TV Indoor</h1>
+      <nav>
+        <ul>
+          <li>
+            <a href="tvs.html" class="block p-2 rounded hover:bg-blue-700 bg-blue-900">
+              <i class="fas fa-tv mr-2"></i> Painéis de TV
+            </a>
+          </li>
+          <li>
+            <a href="contents.html" class="block p-2 rounded hover:bg-blue-700">
+              <i class="fas fa-play-circle mr-2"></i> Conteúdos
+            </a>
+          </li>
+        </ul>
+      </nav>
+      <button id="logoutBtn" class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded flex items-center justify-center">
+        <i class="fas fa-sign-out-alt mr-2"></i> Sair
+      </button>
+    </div>
+
+    <!-- Conteúdo principal -->
+    <div class="flex-1 overflow-auto px-4 sm:px-6 md:px-8 py-6">
+      <div class="max-w-full w-full">
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6">
+          <h2 class="text-2xl font-bold mb-4 sm:mb-0">Suas Indoors</h2>
+          <button id="addTvBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-all flex items-center">
+            <i class="fas fa-plus mr-2"></i> Adicionar TV
+          </button>
+        </div>
+
+        <div class="bg-white rounded-lg shadow overflow-x-auto w-full">
+          <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nome</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Código</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Localização</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tvList" class="bg-white divide-y divide-gray-200">
+              <!-- TVs dinâmicas aqui -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal TV -->
+  <div id="tvModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg p-6 w-full max-w-md animate-fade-in">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-bold" id="modalTvTitle">Adicionar TV</h3>
+        <button id="closeTvModal" class="text-gray-500 hover:text-gray-700 transition-colors">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <form id="tvForm">
+        <input type="hidden" id="tvId">
+        <div class="mb-4">
+          <label for="tvName" class="block text-gray-700 mb-2">Nome *</label>
+          <input type="text" id="tvName" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+        </div>
+        <div class="mb-4">
+          <label for="tvCode" class="block text-gray-700 mb-2">Código *</label>
+          <input type="text" id="tvCode" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+        </div>
+        <div class="mb-4">
+          <label for="tvLocation" class="block text-gray-700 mb-2">Localização</label>
+          <input type="text" id="tvLocation" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </div>
+        <div class="mb-4">
+          <label for="tvDescription" class="block text-gray-700 mb-2">Descrição</label>
+          <textarea id="tvDescription" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+        </div>
+        <div class="flex justify-end space-x-2">
+          <button type="button" id="cancelTvBtn" class="px-4 py-2 border rounded hover:bg-gray-100">Cancelar</button>
+          <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-4 right-4 hidden">
+    <div class="bg-gray-800 text-white px-4 py-3 rounded-lg shadow-lg flex items-center">
+      <span id="toastMessage"></span>
+      <button id="closeToast" class="ml-4 text-gray-300 hover:text-white">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Modais -->
+  <div id="logoutModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg p-6 w-full max-w-sm animate-fade-in">
+      <h3 class="text-xl font-semibold mb-4 text-gray-800">Deseja realmente sair?</h3>
+      <div class="flex justify-end space-x-2">
+        <button id="cancelLogoutBtn" class="px-4 py-2 border rounded hover:bg-gray-100">Cancelar</button>
+        <button id="confirmLogoutBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">Sair</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirmModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+      <div class="flex justify-between items-center mb-4">
+        <h2 id="confirmTitle" class="text-xl font-semibold">Confirmar ação</h2>
+        <button id="closeConfirmModal" class="text-gray-500 hover:text-gray-700 text-xl">&times;</button>
+      </div>
+      <p id="confirmMessage" class="mb-6 text-gray-700">Você tem certeza que deseja continuar?</p>
+      <div class="flex justify-end gap-2">
+        <button id="cancelConfirmBtn" class="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300">Cancelar</button>
+        <button id="confirmBtn" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/admin/js/tvs.js"></script>
+ 
+
+  <script>
+   document.addEventListener('DOMContentLoaded', () => {
+  const toggleBtn = document.getElementById('menuToggle');
+  const sidebar = document.getElementById('sidebar');
+
+  if (toggleBtn && sidebar) {
+    toggleBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('-translate-x-full');
+    });
+  }
+
+  const logoutBtn = document.getElementById('logoutBtn');
+  const logoutModal = document.getElementById('logoutModal');
+  const cancelLogoutBtn = document.getElementById('cancelLogoutBtn');
+  const confirmLogoutBtn = document.getElementById('confirmLogoutBtn');
+
+  if (logoutBtn && logoutModal) {
+    logoutBtn.addEventListener('click', () => {
+      logoutModal.classList.remove('hidden');
+    });
+  }
+
+  if (cancelLogoutBtn && logoutModal) {
+    cancelLogoutBtn.addEventListener('click', () => {
+      logoutModal.classList.add('hidden');
+    });
+  }
+
+  if (confirmLogoutBtn) {
+    confirmLogoutBtn.addEventListener('click', async () => {
+      try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        window.location.href = '/admin/login.html';
+      } catch (err) {
+        alert('Erro ao sair.');
+      }
+    });
+  }
+});
+  </script>
+  
+</body>
+</html>

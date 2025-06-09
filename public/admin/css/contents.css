@@ -1,0 +1,29 @@
+/* tvs.css e contents.css podem ser idênticos */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+#toast {
+  transition: all 0.3s ease;
+}
+
+.toast-success {
+  background-color: #10B981;
+}
+
+.toast-error {
+  background-color: #EF4444;
+}
+
+.toast-warning {
+  background-color: #F59E0B;
+}
+
+.toast-info {
+  background-color: #3B82F6;
+}

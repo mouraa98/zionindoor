@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Conteúdos - TV Indoor</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <link href="/admin/css/contents.css" rel="stylesheet" />
+</head>
+<body class="bg-gray-100">
+
+  <!-- Topbar hamburguer para mobile -->
+  <div class="md:hidden bg-blue-800 text-white flex items-center justify-between px-4 py-3">
+    <h1 class="text-xl font-bold">Painel Zion</h1>
+    <button id="menuToggle" class="text-white focus:outline-none text-2xl">
+      <i class="fas fa-bars"></i>
+    </button>
+  </div>
+
+  <div class="flex h-screen overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="bg-blue-800 text-white w-64 p-4 space-y-4 fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out z-50">
+      <h1 class="text-2xl font-bold mb-8 hidden md:block">TV Indoor</h1>
+      <nav>
+        <ul>
+          <li>
+            <a href="tvs.html" class="block p-2 rounded hover:bg-blue-700">
+              <i class="fas fa-tv mr-2"></i> Painéis de TV
+            </a>
+          </li>
+          <li>
+            <a href="contents.html" class="block p-2 rounded hover:bg-blue-700 bg-blue-900">
+              <i class="fas fa-play-circle mr-2"></i> Conteúdos
+            </a>
+          </li>
+        </ul>
+      </nav>
+      <button id="logoutBtn" class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded flex items-center justify-center mt-6">
+        <i class="fas fa-sign-out-alt mr-2"></i> Sair
+      </button>
+    </aside>
+
+    <!-- Conteúdo principal -->
+    <main class="flex-1 overflow-auto px-4 sm:px-6 md:px-8 py-6">
+      <div class="max-w-full w-full">
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6">
+          <h2 class="text-2xl font-bold mb-4 sm:mb-0">Conteúdos</h2>
+          <div class="flex items-center space-x-2">
+            <select id="filterTv" class="px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+              <option value="">Todas as TVs</option>
+            </select>
+            <button id="addContentBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-all flex items-center whitespace-nowrap">
+              <i class="fas fa-plus mr-2"></i> Adicionar Conteúdo
+            </button>
+          </div>
+        </div>
+
+        <div id="tvGroupsContainer" class="space-y-6">
+          <!-- Os grupos de TV serão inseridos aqui dinamicamente -->
+        </div>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- Modal Conteúdo -->
+  <div id="contentModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg p-6 w-full max-w-md animate-fade-in">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-bold" id="modalContentTitle">Adicionar Conteúdo</h3>
+        <button id="closeContentModal" class="text-gray-500 hover:text-gray-700 transition-colors">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <form id="contentForm" enctype="multipart/form-data">
+        <input type="hidden" id="contentId" />
+        <div class="mb-4">
+          <label for="contentTitle" class="block text-gray-700 mb-2">Título *</label>
+          <input type="text" id="contentTitle" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" required />
+        </div>
+        <div class="mb-4">
+          <label for="contentDescription" class="block text-gray-700 mb-2">Descrição</label>
+          <textarea id="contentDescription" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"></textarea>
+        </div>
+        <div class="mb-4">
+          <label for="contentType" class="block text-gray-700 mb-2">Tipo *</label>
+          <select id="contentType" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" required>
+            <option value="">Selecione...</option>
+            <option value="IMAGE">Imagem</option>
+            <option value="VIDEO">Vídeo</option>
+          </select>
+        </div>
+        <div class="mb-4">
+          <label for="contentDuration" class="block text-gray-700 mb-2">Duração (segundos) *</label>
+          <input type="number" id="contentDuration" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" value="10" required />
+        </div>
+        <div class="mb-4">
+          <label for="contentTv" class="block text-gray-700 mb-2">TV *</label>
+          <select id="contentTv" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" required></select>
+        </div>
+        <div class="mb-4">
+          <label for="contentFile" class="block text-gray-700 mb-2">Arquivo *</label>
+          <input type="file" id="contentFile" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" required />
+          <p class="text-xs text-gray-500 mt-1">Formatos suportados: JPG, PNG e MP4</p>
+        </div>
+        <div class="flex justify-end space-x-2">
+          <div id="uploadProgressContainer" class="hidden mt-4 w-full">
+            <div class="mb-1 flex justify-between items-center">
+              <span class="text-sm font-medium text-gray-700">Enviando arquivo...</span>
+              <span id="uploadProgressPercent" class="text-sm text-gray-500">0%</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+              <div id="uploadProgressBar" class="bg-blue-600 h-full transition-all duration-300 ease-out" style="width: 0%;"></div>
+            </div>
+          </div>
+          <button type="button" id="cancelContentBtn" class="px-4 py-2 border rounded hover:bg-gray-100 transition-colors">Cancelar</button>
+          <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition-colors">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg p-6 w-full max-w-sm animate-fade-in">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-bold" id="confirmTitle">Confirmação</h3>
+        <button id="closeConfirmModal" class="text-gray-500 hover:text-gray-700 transition-colors">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <p id="confirmMessage" class="mb-6">Tem certeza que deseja excluir este item?</p>
+      <div class="flex justify-end space-x-2">
+        <button id="cancelConfirmBtn" class="px-4 py-2 border rounded hover:bg-gray-100 transition-colors">Cancelar</button>
+        <button id="confirmBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded transition-colors">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-4 right-4 hidden">
+    <div class="bg-gray-800 text-white px-4 py-3 rounded-lg shadow-lg flex items-center">
+      <span id="toastMessage"></span>
+      <button id="closeToast" class="ml-4 text-gray-300 hover:text-white">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Logout Modal -->
+  <div id="logoutModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg p-6 w-full max-w-sm animate-fade-in">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-bold">Confirmar Logout</h3>
+        <button id="cancelLogoutBtn" class="text-gray-500 hover:text-gray-700 transition-colors">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <p class="mb-6">Tem certeza que deseja sair?</p>
+      <div class="flex justify-end space-x-2">
+        <button id="cancelLogoutBtn" class="px-4 py-2 border rounded hover:bg-gray-100 transition-colors">Cancelar</button>
+        <button id="confirmLogoutBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded transition-colors">Sair</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/admin/js/contents.js"></script>
+
+  <script>
+    // Toggle menu sidebar mobile
+    const toggleBtn = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    toggleBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('-translate-x-full');
+    });
+
+    // Logout modal
+    const logoutBtn = document.getElementById('logoutBtn');
+    const logoutModal = document.getElementById('logoutModal');
+    const cancelLogoutBtns = document.querySelectorAll('#cancelLogoutBtn');
+    const confirmLogoutBtn = document.getElementById('confirmLogoutBtn');
+
+    logoutBtn.addEventListener('click', () => {
+      logoutModal.classList.remove('hidden');
+    });
+    cancelLogoutBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        logoutModal.classList.add('hidden');
+      });
+    });
+    confirmLogoutBtn.addEventListener('click', async () => {
+      try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        window.location.href = '/admin/login.html';
+      } catch (err) {
+        alert('Erro ao sair.');
+      }
+    });
+  </script>
+
+  <style>
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fade-in 0.3s ease forwards;
+    }
+    
+    .tv-group {
+      background-color: white;
+      border-radius: 0.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    
+    .tv-group-header {
+      background-color: #1e40af;
+      color: white;
+      padding: 0.75rem 1.5rem;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .tv-group-content {
+      overflow-x: auto;
+    }
+    
+    .tv-group-table {
+      min-width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .tv-group-table th {
+      background-color: #f9fafb;
+      padding: 0.75rem 1.5rem;
+      text-align: left;
+      font-weight: 500;
+      color: #6b7280;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+    }
+    
+    .tv-group-table td {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid #e5e7eb;
+    }
+  </style>
+
+</body>
+</html>

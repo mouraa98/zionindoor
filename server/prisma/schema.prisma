@@ -1,0 +1,46 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tvs       TV[]
+}
+
+model TV {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  description String?
+  location    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  contents    Content[]
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model Content {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  filePath    String
+  type        String   @default("IMAGE")
+  duration    Int      @default(10)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tvId        String
+  tv          TV       @relation(fields: [tvId], references: [id])
+}

@@ -134,7 +134,9 @@ app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 app.use('/admin', express.static(path.join(__dirname, '../public/admin'), {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.css')) {
-      res.set('Content-Type', 'text/css');
+      res.setHeader('Content-Type', 'text/css');
+    } else if (filePath.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript');
     }
   }
 }));
@@ -172,7 +174,7 @@ app.get('/admin', (req, res) => {
 });
 
 // Inicia servidor
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 80;
 server.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
   console.log(`Admin: http://localhost:${PORT}/admin`);

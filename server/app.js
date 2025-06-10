@@ -158,6 +158,21 @@ app.get('/p/:code', (req, res) => {
   });
 });
 
+
+
+
+app.get('/download-apk/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const filePath = path.join(__dirname, 'apk', filename);
+
+  if (fs.existsSync(filePath)) {
+    res.download(filePath); // força o download
+  } else {
+    res.status(404).send('Arquivo não encontrado');
+  }
+});
+
+
 // Rota pública para verificação de status (ping)
 app.get('/api/ping', (req, res) => {
   res.status(200).json({ status: 'ok' });

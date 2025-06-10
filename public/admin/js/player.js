@@ -132,17 +132,18 @@ function playContent(index) {
       break;
 
     case 'HTML':
-      fetch(`/uploads/${content.filePath}?t=${Date.now()}`)
-        .then(response => response.text())
-        .then(html => {
-          htmlElement.innerHTML = html;
-          htmlElement.classList.remove('hidden');
-          startContentTimer(content.duration);
-        })
-        .catch(error => {
-          console.error('Erro ao carregar HTML:', error);
-          playNextContent();
-        });
+      htmlElement.innerHTML = `
+  <iframe 
+    src="/uploads/${content.filePath}?t=${Date.now()}" 
+    frameborder="0" 
+    width="100%" 
+    height="100%" 
+    style="border: none; width: 100%; height: 100%;">
+  </iframe>
+`;
+htmlElement.classList.remove('hidden');
+startContentTimer(content.duration);
+
       break;
   }
 }

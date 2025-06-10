@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Notícias - TV Indoor</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #0d1b24;
+      color: white;
+      overflow: hidden;
+    }
+
+    #news-container {
+      display: flex;
+      flex-direction: row;
+      height: 100%;
+      width: 100%;
+    }
+
+    #image-container {
+      width: 60%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #111;
+    }
+
+    #news-image {
+      max-width: 90%;
+      max-height: 90%;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    }
+
+    #text-container {
+      width: 40%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    #news-title {
+      font-size: 2.8vw;
+      font-weight: bold;
+      text-shadow: 2px 2px 6px rgba(0,0,0,0.6);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="news-container">
+    <div id="image-container">
+      <img id="news-image" src="" alt="Imagem da notícia" />
+    </div>
+    <div id="text-container">
+      <div id="news-title">Carregando notícia...</div>
+    </div>
+  </div>
+
+  <script>
+    const feeds = [
+      "https://g1.globo.com/rss/g1/",
+      "https://rss.cnnbrasil.com.br/feed/"
+    ];
+
+    function corsProxyUrl(url) {
+      return "https://corsproxy.io/?" + encodeURIComponent(url);
+    }
+
+    const titleEl = document.getElementById("news-title");
+    const imageEl = document.getElementById("news-image");
+
+    let allNews = [];
+    let currentIndex = 0;
+
+    async function loadFeeds() {
+      allNews = [];
+
+      for (const feed of feeds) {
+        try {
+          const res = await fetch(corsProxyUrl(feed));
+          const xml = await res.text();
+          const parsed = parseRSS(xml);
+          allNews.push(...parsed);
+        } catch (e) {
+          console.error("Erro ao carregar feed:", feed, e);
+        }
+      }
+
+      if (allNews.length === 0) {
+        titleEl.textContent = "Nenhuma notícia disponível no momento.";
+        return;
+      }
+
+      shuffle(allNews);
+      showNews(0);
+      setInterval(() => showNews(currentIndex + 1), 15000);
+    }
+
+    function parseRSS(xmlText) {
+      const parser = new DOMParser();
+      const xml = parser.parseFromString(xmlText, "application/xml");
+      const items = xml.querySelectorAll("item");
+      let arr = [];
+
+      items.forEach(item => {
+        const title = item.querySelector("title")?.textContent || "Sem título";
+        const description = item.querySelector("description")?.textContent || "";
+        let image = "";
+
+        const media = item.getElementsByTagName("media:content")[0];
+        const enclosure = item.getElementsByTagName("enclosure")[0];
+        if (media && media.getAttribute("url")) {
+          image = media.getAttribute("url");
+        } else if (enclosure && enclosure.getAttribute("url")) {
+          image = enclosure.getAttribute("url");
+        } else {
+          const match = description.match(/<img[^>]+src="([^">]+)"/);
+          if (match) image = match[1];
+        }
+
+        arr.push({ title, image });
+      });
+
+      return arr;
+    }
+
+    function showNews(index) {
+      currentIndex = (index + allNews.length) % allNews.length;
+      const news = allNews[currentIndex];
+      titleEl.textContent = news.title;
+      imageEl.src = news.image || "";
+      imageEl.style.display = news.image ? "block" : "none";
+    }
+
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }
+
+    loadFeeds();
+  </script>
+</body>
+</html>

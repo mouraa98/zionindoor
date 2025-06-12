@@ -64,14 +64,12 @@ function checkConnection() {
     });
 }
 
-
-
 // Carrega conteúdos
 async function loadContents() {
   try {
     const response = await fetch(`/api/contents/tv/${tvCode}`);
     if (!response.ok) throw new Error('Erro ao carregar conteúdos');
-    
+
     const newContents = await response.json();
     if (contentsAreDifferent(contents, newContents)) {
       console.log('Lista de reprodução atualizada');
@@ -101,25 +99,27 @@ function playContent(index) {
   currentContentIndex = index;
   const content = contents[index];
 
-  imgElement.classList.add('hidden');
-  videoElement.classList.add('hidden');
-  htmlElement.classList.add('hidden');
-
   switch (content.type) {
     case 'IMAGE':
-      imgElement.onload = () => {
+      const newImg = new Image();
+      newImg.onload = () => {
+        imgElement.src = newImg.src;
+        videoElement.classList.add('hidden');
+        htmlElement.classList.add('hidden');
         imgElement.classList.remove('hidden');
         startContentTimer(content.duration);
       };
-      imgElement.onerror = () => {
+      newImg.onerror = () => {
         console.error('Erro ao carregar imagem:', content.filePath);
         playNextContent();
       };
-      imgElement.src = `/uploads/${content.filePath}?t=${Date.now()}`;
+      newImg.src = `/uploads/${content.filePath}?t=${Date.now()}`;
       break;
 
     case 'VIDEO':
       videoElement.onloadeddata = () => {
+        imgElement.classList.add('hidden');
+        htmlElement.classList.add('hidden');
         videoElement.classList.remove('hidden');
         videoElement.play().catch(e => console.error('Erro ao reproduzir vídeo:', e));
       };
@@ -127,23 +127,26 @@ function playContent(index) {
         console.error('Erro ao carregar vídeo:', content.filePath);
         playNextContent();
       };
-      videoElement.src = `/uploads/${content.filePath}?t=${Date.now()}`;
       videoElement.loop = content.duration === 0;
+      videoElement.src = `/uploads/${content.filePath}?t=${Date.now()}`;
       break;
 
     case 'HTML':
-      htmlElement.innerHTML = `
-  <iframe 
-    src="/uploads/${content.filePath}?t=${Date.now()}" 
-    frameborder="0" 
-    width="100%" 
-    height="100%" 
-    style="border: none; width: 100%; height: 100%;">
-  </iframe>
-`;
-htmlElement.classList.remove('hidden');
-startContentTimer(content.duration);
+      const iframe = document.createElement('iframe');
+      iframe.src = `/uploads/${content.filePath}?t=${Date.now()}`;
+      iframe.frameBorder = 0;
+      iframe.style.border = 'none';
+      iframe.style.width = '100%';
+      iframe.style.height = '100%';
 
+      htmlElement.innerHTML = '';
+      htmlElement.appendChild(iframe);
+
+      imgElement.classList.add('hidden');
+      videoElement.classList.add('hidden');
+      htmlElement.classList.remove('hidden');
+
+      startContentTimer(content.duration);
       break;
   }
 }
@@ -174,10 +177,9 @@ setInterval(loadContents, 30000);
 const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
 const ws = new WebSocket(`${protocol}://${location.host}/ws/tv/${tvCode}`);
 
-
 ws.onmessage = (event) => {
   console.log('Atualização via WebSocket recebida:', event.data);
-  loadContents(); // Atualiza a lista imediatamente
+  loadContents();
 };
 
 ws.onopen = () => {

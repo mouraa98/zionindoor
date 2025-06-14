@@ -59,39 +59,24 @@
       font-size: 14px;
     }
 
+    
+
     .status-disconnected {
       background-color: rgba(255, 0, 0, 0.3);
       color: #f00;
     }
 
-    #conteudos {
-      position: absolute;
-      bottom: 10px;
-      left: 10px;
-      color: white;
-      background: rgba(0,0,0,0.5);
-      padding: 10px;
-      border-radius: 5px;
-      max-height: 200px;
-      overflow-y: auto;
-      font-size: 14px;
-    }
-
     /* Estilo para vídeos verticais */
     .vertical-video {
       transform: rotate(90deg) scale(2);
-      
       height: 90% !important;
-     
-      
-      
     }
+    
     /* Estilo para imagens verticais */
-.vertical-image {
-  transform: rotate(90deg) scale(2);
-  height: 90% !important;
-}
-
+    .vertical-image {
+      transform: rotate(90deg) scale(2);
+      height: 90% !important;
+    }
   </style>
 </head>
 <body>
@@ -104,114 +89,6 @@
     <div id="html-content" class="hidden"></div>
   </div>
 
- 
-
-  <script src="../admin/js/player.js"></script>
-  <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const code = window.location.pathname.split('/').pop();
-    const videoElement = document.getElementById('video-content');
-    const imageElement = document.getElementById('current-content');
-
-    // Verifica se vídeo é vertical
-    function isVerticalVideo(video) {
-      return video.videoHeight > video.videoWidth;
-    }
-
-    // Ajusta rotação do vídeo
-    function adjustVideoRotation() {
-      setTimeout(() => {
-        if (videoElement.videoWidth && videoElement.videoHeight) {
-          const isVertical = videoElement.videoHeight > videoElement.videoWidth;
-          if (isVertical) {
-            videoElement.classList.add('vertical-video');
-          } else {
-            videoElement.classList.remove('vertical-video');
-          }
-        }
-      }, 100);
-    }
-
-    // Verifica se imagem é vertical
-    function isVerticalImage(img) {
-      return img.naturalHeight > img.naturalWidth;
-    }
-
-    // Ajusta rotação da imagem
-    function adjustImageRotation() {
-      if (imageElement.complete && imageElement.naturalWidth && imageElement.naturalHeight) {
-        if (isVerticalImage(imageElement)) {
-          imageElement.classList.add('vertical-image');
-        } else {
-          imageElement.classList.remove('vertical-image');
-        }
-      }
-    }
-
-    // Detectar quando vídeo está pronto
-    videoElement.addEventListener('loadedmetadata', adjustVideoRotation);
-
-    // Detectar quando imagem carregar
-    imageElement.addEventListener('load', adjustImageRotation);
-
-    async function carregarConteudo() {
-      try {
-        const resposta = await fetch(`/api/contents/tv/${code}`);
-        if (!resposta.ok) {
-          throw new Error(`Erro na resposta da API: ${resposta.status}`);
-        }
-
-        const conteudos = await resposta.json();
-        const container = document.getElementById('conteudos');
-        container.innerHTML = '';
-
-        
-
-        document.getElementById('loading').classList.add('hidden');
-
-        // Exemplo: Exibir o primeiro conteúdo
-        const primeiro = conteudos[0];
-        if (!primeiro) return;
-
-        const tipo = primeiro.type || '';
-        const url = primeiro.url || '';
-
-        // Oculta todos os conteúdos
-        imageElement.classList.add('hidden');
-        videoElement.classList.add('hidden');
-        document.getElementById('html-content').classList.add('hidden');
-
-        // Limpa rotação anterior
-        imageElement.classList.remove('vertical-image');
-        videoElement.classList.remove('vertical-video');
-
-        if (tipo === 'image') {
-          imageElement.src = url;
-          imageElement.classList.remove('hidden');
-        } else if (tipo === 'video') {
-          videoElement.src = url;
-          videoElement.classList.remove('hidden');
-        } else if (tipo === 'html') {
-          document.getElementById('html-content').innerHTML = `<iframe src="${url}" frameborder="0" style="width:100%;height:100%"></iframe>`;
-          document.getElementById('html-content').classList.remove('hidden');
-        }
-
-      } catch (err) {
-        console.error('Erro ao carregar conteúdo:', err);
-      }
-    }
-
-    carregarConteudo();
-
-    const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-    const socket = new WebSocket(`${protocol}://${location.host}/ws/tv/${code}`);
-
-    socket.onmessage = () => {
-      console.log('Conteúdo atualizado. Recarregando...');
-      carregarConteudo();
-    };
-  });
-</script>
-
+ <script src="../admin/js/player.js"></script>
 </body>
 </html>

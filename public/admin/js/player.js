@@ -288,7 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   ws.onopen = () => {
     console.log('WebSocket connected');
-    connectionStatus.textContent = 'Online (WS)';
+    connectionStatus.textContent = '';
     connectionStatus.className = 'status-connected';
   };
 

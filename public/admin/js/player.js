@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const newContents = await response.json();
       if (contentsAreDifferent(contents, newContents)) {
-        console.log('Lista de reprodução atualizada');
+        console.log('Lista de reprodução atualizada:', newContents);
         contents = newContents;
 
         if (contents.length === 0) {
@@ -140,22 +140,49 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Exibe conteúdo com transição imediata
+  // Função corrigida para loop infinito
+  function playNextContent() {
+    if (!contents || contents.length === 0) {
+      console.warn('Nenhum conteúdo disponível - tentando recarregar');
+      setTimeout(loadContents, 5000);
+      return;
+    }
+    
+    const nextIndex = (currentContentIndex + 1) % contents.length;
+    console.log(`Avançando para conteúdo ${nextIndex + 1}/${contents.length}`);
+    playContent(nextIndex);
+  }
+
+  // Exibe conteúdo com loop corrigido
   function playContent(index) {
-    if (!contents || contents.length === 0) return;
-    if (index >= contents.length) index = 0;
+    if (!contents || contents.length === 0) {
+      console.warn('Playlist vazia - aguardando conteúdo...');
+      setTimeout(loadContents, 5000);
+      return;
+    }
 
-    currentContentIndex = index;
-    const content = contents[index];
+    // Garante que o índice esteja dentro dos limites
+    currentContentIndex = index % contents.length;
+    const content = contents[currentContentIndex];
+    
+    console.log(`Iniciando conteúdo ${currentContentIndex + 1}/${contents.length}:`, content);
 
-    // Oculta todos os elementos primeiro (sem delay)
+    // Reset completo do vídeo antes de cada reprodução
+    if (isPlayingVideo) {
+      videoElement.pause();
+      videoElement.removeAttribute('src');
+      videoElement.load();
+      isPlayingVideo = false;
+    }
+
+    // Oculta todos os elementos primeiro
     imgElement.classList.add('hidden');
     videoElement.classList.add('hidden');
     htmlElement.classList.add('hidden');
 
     if (!content || !content.type || !content.filePath) {
       console.error('Conteúdo inválido:', content);
-      playNextContent();
+      setTimeout(playNextContent, 1000);
       return;
     }
 
@@ -167,18 +194,23 @@ document.addEventListener('DOMContentLoaded', () => {
         imgElement.onload = function() {
           adjustImageRotation();
           startContentTimer(content.duration);
-          imgElement.classList.remove('hidden'); // Mostra imediatamente
+          imgElement.classList.remove('hidden');
+          console.log('Imagem carregada com sucesso');
         };
         imgElement.onerror = function() {
-          console.error('Erro ao carregar imagem:', contentPath);
-          playNextContent();
+          console.error('Falha ao carregar imagem:', contentPath);
+          setTimeout(playNextContent, 1000);
         };
         imgElement.src = contentPath;
         break;
 
       case 'VIDEO':
+        // Remove listeners antigos para evitar duplicação
+        videoElement.onloadeddata = null;
+        videoElement.onerror = null;
+        videoElement.onended = null;
+
         videoElement.controls = false;
-        videoElement.src = contentPath;
         videoElement.loop = content.duration === 0;
         videoElement.muted = true;
         videoElement.playsInline = true;
@@ -187,22 +219,29 @@ document.addEventListener('DOMContentLoaded', () => {
         videoElement.onloadeddata = function() {
           adjustVideoRotation();
           isPlayingVideo = true;
-          videoElement.classList.remove('hidden'); // Mostra imediatamente
+          videoElement.classList.remove('hidden');
+          console.log('Vídeo carregado - iniciando reprodução');
           videoElement.play().catch(e => {
-            console.warn('Tentativa de autoplay falhou, tentando com muted...');
+            console.warn('Autoplay bloqueado, tentando com muted...', e);
             videoElement.muted = true;
-            videoElement.play().catch(e2 => console.error('Erro ao reproduzir vídeo:', e2));
+            videoElement.play().catch(e2 => {
+              console.error('Falha na reprodução:', e2);
+              setTimeout(playNextContent, 1000);
+            });
           });
         };
 
         videoElement.onerror = function() {
-          console.error('Erro ao carregar vídeo:', contentPath);
-          playNextContent();
+          console.error('Falha ao carregar vídeo:', contentPath);
+          setTimeout(playNextContent, 1000);
         };
 
         videoElement.onended = function() {
+          console.log('Vídeo concluído - avançando para próximo');
           if (!videoElement.loop) playNextContent();
         };
+
+        videoElement.src = contentPath;
         break;
 
       case 'HTML':
@@ -214,32 +253,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
         htmlElement.innerHTML = '';
         htmlElement.appendChild(iframe);
-        htmlElement.classList.remove('hidden'); // Mostra imediatamente
+        htmlElement.classList.remove('hidden');
+        console.log('Conteúdo HTML carregado');
         startContentTimer(content.duration);
         break;
 
       default:
         console.error('Tipo de conteúdo desconhecido:', contentType);
-        playNextContent();
+        setTimeout(playNextContent, 1000);
     }
-
-    // Limpa o conteúdo anterior assincronamente
-    setTimeout(() => {
-      cleanupPreviousContent();
-    }, 0);
   }
 
   // Timer do conteúdo
   function startContentTimer(duration) {
-    if (contentInterval) clearTimeout(contentInterval);
-    if (duration > 0) {
-      contentInterval = setTimeout(playNextContent, duration * 1000);
+    // Limpa timer anterior
+    if (contentInterval) {
+      clearTimeout(contentInterval);
+      contentInterval = null;
     }
-  }
 
-  // Próximo conteúdo
-  function playNextContent() {
-    playContent(currentContentIndex + 1);
+    // Só cria novo timer se duration for válido
+    if (duration > 0) {
+      console.log(`Agendando próximo conteúdo em ${duration} segundos`);
+      contentInterval = setTimeout(() => {
+        console.log('Timer concluído - avançando conteúdo');
+        playNextContent();
+      }, duration * 1000);
+    }
   }
 
   // Verifica conexão a cada 10s
@@ -268,6 +308,18 @@ document.addEventListener('DOMContentLoaded', () => {
     connectionStatus.textContent = 'Offline (WS)';
     connectionStatus.className = 'status-disconnected';
   };
+
+  // Debug adicional
+  setInterval(() => {
+    console.log('Estado atual:', {
+      index: currentContentIndex,
+      contentsLength: contents.length,
+      playingVideo: isPlayingVideo,
+      timerActive: !!contentInterval,
+      videoState: videoElement.readyState,
+      videoPaused: videoElement.paused
+    });
+  }, 5000);
 
   // Início
   checkConnection();

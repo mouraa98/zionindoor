@@ -66,8 +66,7 @@
       color: #f00;
     }
 
-    /* Estilo corrigido para vídeos verticais - sem cropping */
-.vertical-video {
+    .vertical-video {
   width: 100vh !important;
   height: 100vw !important;
   max-width: none;
@@ -79,18 +78,11 @@
   object-fit: contain;
 }
 
-/* Estilo corrigido para imagens verticais - sem cropping */
-.vertical-image {
-  width: 100vh !important;
-  height: 100vw !important;
-  max-width: none;
-  max-height: none;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) rotate(90deg);
-  object-fit: contain;
-}
+    /* Estilo para imagens verticais */
+    .vertical-image {
+      transform: rotate(90deg) scale(2);
+      height: 90% !important;
+    }
   </style>
 </head>
 <body>

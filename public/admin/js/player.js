@@ -1,13 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // DOM Elements
+  // Elementos do DOM
   const connectionStatus = document.getElementById('connection-status');
   const loadingElement = document.getElementById('loading');
-  const contentContainer = document.getElementById('content-container');
   const imgElement = document.getElementById('current-content');
   const videoElement = document.getElementById('video-content');
   const htmlElement = document.getElementById('html-content');
 
-  // Get TV code from URL
+  // Função para extrair o código da TV
   function getTVCode() {
     const urlParams = new URLSearchParams(window.location.search);
     let code = urlParams.get('code');
@@ -26,51 +25,53 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (!tvCode) {
     loadingElement.innerHTML = `
-      TV code not specified!<br><br>
-      Access using:<br>
+      Código da TV não especificado!<br><br>
+      Acesse usando:<br>
       • <a href="/p/0102">/p/0102</a><br>
       • <a href="/player?code=0102">/player?code=0102</a>
     `;
     return;
   }
 
-  console.log('TV code detected:', tvCode);
+  console.log('Código da TV detectado:', tvCode);
 
-  // State variables
+  // Variáveis de estado
   let currentContentIndex = 0;
   let contents = [];
   let contentInterval;
   let isPlayingVideo = false;
 
-  // Check if video is vertical
+  // Verifica se vídeo é vertical
   function isVerticalVideo(video) {
     return video.videoHeight > video.videoWidth;
   }
 
-  // Adjust video rotation
+  // Ajusta rotação do vídeo
   function adjustVideoRotation() {
     if (videoElement.videoWidth && videoElement.videoHeight) {
-      videoElement.classList.toggle('vertical-video', isVerticalVideo(videoElement));
+      const isVertical = isVerticalVideo(videoElement);
+      videoElement.classList.toggle('vertical-video', isVertical);
     }
   }
 
-  // Check if image is vertical
+  // Verifica se imagem é vertical
   function isVerticalImage(img) {
     return img.naturalHeight > img.naturalWidth;
   }
 
-  // Adjust image rotation
+  // Ajusta rotação da imagem
   function adjustImageRotation() {
     if (imgElement.complete && imgElement.naturalWidth && imgElement.naturalHeight) {
-      imgElement.classList.toggle('vertical-image', isVerticalImage(imgElement));
+      const isVertical = isVerticalImage(imgElement);
+      imgElement.classList.toggle('vertical-image', isVertical);
     }
   }
 
-  // Setup listeners
+  // Configura listeners
   videoElement.addEventListener('loadedmetadata', adjustVideoRotation);
   imgElement.addEventListener('load', adjustImageRotation);
 
-  // Clean up previous content
+  // Limpar recursos do conteúdo anterior
   function cleanupPreviousContent() {
     if (isPlayingVideo) {
       videoElement.pause();
@@ -84,17 +85,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Content comparison
+  // Comparador de conteúdo
   function contentsAreDifferent(a, b) {
     if (!a || !b || a.length !== b.length) return true;
-    return a.some((item, i) => 
-      item.filePath !== b[i].filePath ||
-      item.type !== b[i].type ||
-      item.duration !== b[i].duration
-    );
+    for (let i = 0; i < a.length; i++) {
+      if (
+        a[i].filePath !== b[i].filePath ||
+        a[i].type !== b[i].type ||
+        a[i].duration !== b[i].duration
+      ) {
+        return true;
+      }
+    }
+    return false;
   }
 
-  // Check connection status
   function checkConnection() {
     fetch('/api/ping')
       .then(() => {
@@ -107,134 +112,96 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
-  // Smooth transition effect
-  async function applyTransition() {
-    return new Promise(resolve => {
-      contentContainer.style.opacity = '0';
-      setTimeout(() => {
-        contentContainer.style.opacity = '1';
-        resolve();
-      }, 500);
-    });
-  }
-
-  // Load contents from API
+  // Carrega conteúdos
   async function loadContents() {
     try {
       const response = await fetch(`/api/contents/tv/${tvCode}`);
-      if (!response.ok) throw new Error('Failed to load contents');
+      if (!response.ok) throw new Error('Erro ao carregar conteúdos');
 
       const newContents = await response.json();
       if (contentsAreDifferent(contents, newContents)) {
-        console.log('Playlist updated');
+        console.log('Lista de reprodução atualizada');
         contents = newContents;
 
         if (contents.length === 0) {
-          loadingElement.textContent = 'No content available for this TV.';
+          loadingElement.textContent = 'Nenhum conteúdo disponível para esta TV.';
           loadingElement.classList.remove('hidden');
           return;
         }
 
         loadingElement.classList.add('hidden');
-        await playContent(0);
+        playContent(0);
       }
     } catch (error) {
-      console.error('Error loading contents:', error);
-      loadingElement.textContent = 'Error loading contents. Retrying...';
+      console.error('Erro ao carregar conteúdos:', error);
+      loadingElement.textContent = 'Erro ao carregar conteúdos. Tentando novamente...';
       loadingElement.classList.remove('hidden');
       setTimeout(loadContents, 5000);
     }
   }
 
-  // Play content with index
-  async function playContent(index) {
+  // Exibe conteúdo com transição imediata
+  function playContent(index) {
     if (!contents || contents.length === 0) return;
     if (index >= contents.length) index = 0;
 
     currentContentIndex = index;
     const content = contents[index];
 
-    // Start transition out
-    contentContainer.style.opacity = '0';
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    // Clean up and change content during transition
-    cleanupPreviousContent();
+    // Oculta todos os elementos primeiro (sem delay)
+    imgElement.classList.add('hidden');
+    videoElement.classList.add('hidden');
+    htmlElement.classList.add('hidden');
 
     if (!content || !content.type || !content.filePath) {
-      console.error('Invalid content:', content);
-      await playNextContent();
+      console.error('Conteúdo inválido:', content);
+      playNextContent();
       return;
     }
 
     const contentType = content.type.toUpperCase();
     const contentPath = `/uploads/${content.filePath}?t=${Date.now()}`;
 
-    // Hide all elements first
-    imgElement.classList.add('hidden');
-    videoElement.classList.add('hidden');
-    htmlElement.classList.add('hidden');
-
     switch (contentType) {
       case 'IMAGE':
-        imgElement.onload = async function() {
+        imgElement.onload = function() {
           adjustImageRotation();
           startContentTimer(content.duration);
-          await applyTransition();
+          imgElement.classList.remove('hidden'); // Mostra imediatamente
         };
-        imgElement.onerror = async function() {
-          console.error('Error loading image:', contentPath);
-          await playNextContent();
+        imgElement.onerror = function() {
+          console.error('Erro ao carregar imagem:', contentPath);
+          playNextContent();
         };
         imgElement.src = contentPath;
-        imgElement.classList.remove('hidden');
         break;
 
       case 'VIDEO':
         videoElement.controls = false;
-        const preloader = document.createElement('video');
-        preloader.preload = 'auto';
-        preloader.src = contentPath;
-        preloader.muted = true;
-        preloader.playsInline = true;
-        preloader.setAttribute('webkit-playsinline', 'true');
+        videoElement.src = contentPath;
+        videoElement.loop = content.duration === 0;
+        videoElement.muted = true;
+        videoElement.playsInline = true;
+        videoElement.setAttribute('webkit-playsinline', 'true');
 
-        preloader.addEventListener('canplaythrough', async () => {
-          videoElement.src = preloader.src;
-          videoElement.loop = content.duration === 0;
-          videoElement.muted = true;
-          videoElement.playsInline = true;
-          videoElement.setAttribute('webkit-playsinline', 'true');
+        videoElement.onloadeddata = function() {
+          adjustVideoRotation();
+          isPlayingVideo = true;
+          videoElement.classList.remove('hidden'); // Mostra imediatamente
+          videoElement.play().catch(e => {
+            console.warn('Tentativa de autoplay falhou, tentando com muted...');
+            videoElement.muted = true;
+            videoElement.play().catch(e2 => console.error('Erro ao reproduzir vídeo:', e2));
+          });
+        };
 
-          videoElement.onloadeddata = async () => {
-            adjustVideoRotation();
-            isPlayingVideo = true;
-            await applyTransition();
-            
-            try {
-              await videoElement.play();
-            } catch (e) {
-              console.warn('Autoplay failed, trying with muted...');
-              videoElement.muted = true;
-              await videoElement.play().catch(e2 => console.error('Video play error:', e2));
-            }
-          };
+        videoElement.onerror = function() {
+          console.error('Erro ao carregar vídeo:', contentPath);
+          playNextContent();
+        };
 
-          videoElement.onerror = async () => {
-            console.error('Error loading video:', contentPath);
-            await playNextContent();
-          };
-
-          videoElement.onended = async () => {
-            if (!videoElement.loop) await playNextContent();
-          };
-
-          videoElement.classList.remove('hidden');
-        }, { once: true });
-
-        preloader.onerror = async () => {
-          console.error('Error preloading video:', contentPath);
-          await playNextContent();
+        videoElement.onended = function() {
+          if (!videoElement.loop) playNextContent();
         };
         break;
 
@@ -247,59 +214,62 @@ document.addEventListener('DOMContentLoaded', () => {
 
         htmlElement.innerHTML = '';
         htmlElement.appendChild(iframe);
-        htmlElement.classList.remove('hidden');
-        await applyTransition();
+        htmlElement.classList.remove('hidden'); // Mostra imediatamente
         startContentTimer(content.duration);
         break;
 
       default:
-        console.error('Unknown content type:', contentType);
-        await playNextContent();
+        console.error('Tipo de conteúdo desconhecido:', contentType);
+        playNextContent();
     }
+
+    // Limpa o conteúdo anterior assincronamente
+    setTimeout(() => {
+      cleanupPreviousContent();
+    }, 0);
   }
 
-  // Start content timer
+  // Timer do conteúdo
   function startContentTimer(duration) {
     if (contentInterval) clearTimeout(contentInterval);
     if (duration > 0) {
-      contentInterval = setTimeout(() => playNextContent(), duration * 1000);
+      contentInterval = setTimeout(playNextContent, duration * 1000);
     }
   }
 
-  // Play next content
-  async function playNextContent() {
-    await playContent(currentContentIndex + 1);
+  // Próximo conteúdo
+  function playNextContent() {
+    playContent(currentContentIndex + 1);
   }
 
-  // Check connection every 10s
+  // Verifica conexão a cada 10s
   setInterval(checkConnection, 10000);
 
-  // Check for new contents every 30s
+  // Verifica novos conteúdos a cada 30s
   setInterval(loadContents, 30000);
 
-  // WebSocket for real-time updates
+  // WebSocket para atualizações em tempo real
   const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
   const ws = new WebSocket(`${protocol}://${location.host}/ws/tv/${tvCode}`);
 
   ws.onmessage = (event) => {
-    console.log('WebSocket update received:', event.data);
+    console.log('Atualização via WebSocket recebida:', event.data);
     loadContents();
   };
 
   ws.onopen = () => {
-    console.log('WebSocket connected');
-    connectionStatus.textContent = '';
+    console.log('WebSocket conectado');
+    connectionStatus.textContent = 'Online (WS)';
     connectionStatus.className = 'status-connected';
   };
 
   ws.onerror = (err) => {
-    console.error('WebSocket error:', err);
+    console.error('Erro no WebSocket:', err);
     connectionStatus.textContent = 'Offline (WS)';
     connectionStatus.className = 'status-disconnected';
   };
 
-  // Initial setup
-  contentContainer.style.transition = 'opacity 0.5s ease-in-out';
+  // Início
   checkConnection();
   loadContents();
 });

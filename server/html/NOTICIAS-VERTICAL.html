@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Notícias Verticais</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    html {
+      width: 100vh;
+      height: 100vw;
+      overflow: hidden;
+    }
+    
+    body {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(90deg);
+      transform-origin: center;
+      width: 100vh;
+      height: 100vw;
+      background-color: #f0f0f0;
+      font-family: 'Roboto', 'Segoe UI', sans-serif;
+      overflow: hidden;
+    }
+
+    .news-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+
+    .news-header {
+      background: #d32f2f;
+      color: white;
+      padding: 15px 20px;
+      font-size: 2rem;
+      font-weight: bold;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .time {
+      font-size: 1.5rem;
+      font-weight: normal;
+    }
+
+    .news-image-container {
+      height: 60%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .news-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: opacity 0.5s ease;
+    }
+
+    .news-content {
+      padding: 20px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .news-title {
+      font-size: 2.8rem;
+      font-weight: 700;
+      margin-bottom: 15px;
+      color: #333;
+      line-height: 1.2;
+    }
+
+    .news-description {
+      font-size: 1.8rem;
+      line-height: 1.4;
+      color: #555;
+      flex: 1;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+    }
+
+    .news-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      background: #f5f5f5;
+      border-top: 1px solid #e0e0e0;
+      font-size: 1.2rem;
+      color: #777;
+    }
+
+    .loading {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #fff;
+      color: #333;
+      font-size: 2rem;
+      z-index: 10;
+      flex-direction: column;
+    }
+
+    .spinner {
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #d32f2f;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .progress-bar {
+      height: 4px;
+      background: #d32f2f;
+      width: 100%;
+      transform-origin: left;
+      transform: scaleX(1);
+      transition: transform linear;
+    }
+
+    .news-ticker {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 10px;
+      font-size: 1.4rem;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .ticker-content {
+      display: inline-block;
+      padding-left: 100%;
+      animation: ticker 20s linear infinite;
+    }
+
+    @keyframes ticker {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-100%); }
+    }
+
+    @media (max-width: 1200px) {
+      .news-title {
+        font-size: 2.2rem;
+      }
+      .news-description {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div>Carregando notícias...</div>
+  </div>
+  
+  <div class="news-container">
+    <div class="news-header">
+      <div>Últimas Notícias</div>
+      <div class="time" id="current-time"></div>
+    </div>
+    
+    <div class="progress-bar" id="progress-bar"></div>
+    
+    <div class="news-image-container">
+      <img id="news-image" class="news-image" src="" alt="Imagem da notícia">
+    </div>
+    
+    <div class="news-content">
+      <h1 id="news-title" class="news-title">Carregando notícia...</h1>
+      <div id="news-description" class="news-description"></div>
+    </div>
+    
+    <div class="news-footer">
+      <div id="news-source">Fonte: G1 Notícias</div>
+      <div id="news-date"></div>
+    </div>
+    
+    <div class="news-ticker">
+      <div class="ticker-content" id="ticker-content"></div>
+    </div>
+  </div>
+
+  <script>
+    const feeds = [
+      "https://g1.globo.com/rss/g1/"
+    ];
+
+    const proxy = url => "https://corsproxy.io/?" + encodeURIComponent(url);
+
+    const titleEl = document.getElementById("news-title");
+    const descEl = document.getElementById("news-description");
+    const imageEl = document.getElementById("news-image");
+    const loadingEl = document.getElementById("loading");
+    const progressBar = document.getElementById("progress-bar");
+    const timeEl = document.getElementById("current-time");
+    const dateEl = document.getElementById("news-date");
+    const tickerEl = document.getElementById("ticker-content");
+
+    let allNews = [];
+    let currentIndex = 0;
+    let changeInterval = 20000; // 20 segundos
+    let intervalId = null;
+    let startTime = 0;
+
+    // Atualiza relógio
+    function updateClock() {
+      const now = new Date();
+      timeEl.textContent = now.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+      dateEl.textContent = now.toLocaleDateString('pt-BR', {weekday: 'long', day: 'numeric', month: 'long'});
+    }
+
+    // Carrega feeds de notícias
+    async function loadFeeds() {
+      loadingEl.style.display = "flex";
+      updateClock();
+      setInterval(updateClock, 60000); // Atualiza o relógio a cada minuto
+      
+      try {
+        allNews = [];
+        
+        const feedPromises = feeds.map(feed => 
+          fetch(proxy(feed))
+            .then(res => res.text())
+            .then(xml => parseRSS(xml))
+            .catch(e => {
+              console.error("Erro ao carregar feed:", feed, e);
+              return [];
+            })
+        );
+
+        const results = await Promise.all(feedPromises);
+        allNews = results.flat();
+        
+        if (allNews.length === 0) {
+          showError("Nenhuma notícia disponível.");
+          return;
+        }
+
+        // Prepara ticker com todos os títulos
+        const tickerText = allNews.map(news => news.title).join(" ••• ");
+        tickerEl.textContent = tickerText + " ••• " + tickerText; // Duplica para loop suave
+
+        shuffle(allNews);
+        loadingEl.style.display = "none";
+        startNewsCycle();
+      } catch (e) {
+        showError("Erro ao carregar notícias");
+        console.error("Erro geral:", e);
+      }
+    }
+
+    // Analisa o XML do RSS
+    function parseRSS(xmlText) {
+      const parser = new DOMParser();
+      const xml = parser.parseFromString(xmlText, "application/xml");
+      const items = xml.querySelectorAll("item");
+      let arr = [];
+
+      items.forEach(item => {
+        const title = item.querySelector("title")?.textContent || "Sem título";
+        const description = item.querySelector("description")?.textContent || "";
+        const pubDate = item.querySelector("pubDate")?.textContent || new Date().toISOString();
+        let image = "";
+
+        // Tenta obter imagem de várias fontes
+        try {
+          const mediaContent = item.getElementsByTagNameNS("http://search.yahoo.com/mrss/", "content")[0];
+          const mediaThumbnail = item.getElementsByTagNameNS("http://search.yahoo.com/mrss/", "thumbnail")[0];
+          const enclosure = item.querySelector("enclosure");
+          
+          if (mediaContent?.getAttribute("url")) {
+            image = mediaContent.getAttribute("url");
+          } else if (mediaThumbnail?.getAttribute("url")) {
+            image = mediaThumbnail.getAttribute("url");
+          } else if (enclosure?.getAttribute("url")?.match(/\.(jpg|jpeg|png|gif)$/i)) {
+            image = enclosure.getAttribute("url");
+          } else {
+            const match = description.match(/<img[^>]+src="([^">]+)"/);
+            if (match) image = match[1];
+          }
+        } catch (e) {
+          console.log("Erro ao buscar imagem:", e);
+        }
+
+        // Limpa a descrição de HTML tags
+        const cleanDesc = description
+          .replace(/<[^>]*>/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
+
+        arr.push({ 
+          title, 
+          description: cleanDesc, 
+          image,
+          date: new Date(pubDate)
+        });
+      });
+
+      return arr;
+    }
+
+    // Inicia o ciclo de notícias
+    function startNewsCycle() {
+      showNews(0);
+      
+      if (intervalId) clearInterval(intervalId);
+      intervalId = setInterval(() => showNews(currentIndex + 1), changeInterval);
+      
+      startProgressBar();
+    }
+
+    // Exibe uma notícia específica
+    function showNews(index) {
+      startProgressBar();
+      
+      currentIndex = index % allNews.length;
+      const news = allNews[currentIndex];
+      
+      // Pré-carrega a imagem
+      if (news.image) {
+        const img = new Image();
+        img.src = news.image;
+        img.onload = () => {
+          imageEl.style.opacity = 0;
+          setTimeout(() => {
+            imageEl.src = news.image;
+            imageEl.style.opacity = 1;
+          }, 500);
+        };
+        img.onerror = () => {
+          imageEl.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 150'%3E%3Crect width='300' height='150' fill='%23f5f5f5'/%3E%3Ctext x='150' y='80' font-family='Arial' font-size='16' text-anchor='middle' fill='%23ccc'%3EImagem não disponível%3C/text%3E%3C/svg%3E";
+        };
+      } else {
+        imageEl.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 150'%3E%3Crect width='300' height='150' fill='%23f5f5f5'/%3E%3Ctext x='150' y='80' font-family='Arial' font-size='16' text-anchor='middle' fill='%23ccc'%3EImagem não disponível%3C/text%3E%3C/svg%3E";
+      }
+      
+      titleEl.textContent = news.title;
+      descEl.textContent = news.description || "";
+    }
+
+    // Animação da barra de progresso
+    function startProgressBar() {
+      startTime = Date.now();
+      const updateProgress = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = elapsed / changeInterval;
+        progressBar.style.transform = `scaleX(${1 - progress})`;
+        
+        if (progress < 1) {
+          requestAnimationFrame(updateProgress);
+        }
+      };
+      requestAnimationFrame(updateProgress);
+    }
+
+    // Exibe mensagem de erro
+    function showError(message) {
+      loadingEl.querySelector('div:last-child').textContent = message;
+    }
+
+    // Embaralha array
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }
+
+    // Inicia o carregamento
+    loadFeeds();
+    
+    // Redimensiona corretamente após a rotação
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        document.body.style.transform = 'translate(-50%, -50%) rotate(90deg)';
+      }, 100);
+    });
+  </script>
+</body>
+</html>

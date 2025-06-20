@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lançamentos de Filmes - Tela Cheia</title>
+  <style>
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+    }
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: black;
+      color: white;
+    }
+    #container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      background-size: cover;
+      background-position: center center;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 20px;
+    }
+    #overlay {
+      backdrop-filter: blur(10px);
+      background-color: rgba(0,0,0,0.5);
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 90vw;
+      margin-bottom: 40px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.7);
+    }
+    #title {
+      font-size: 2.5rem;
+      font-weight: bold;
+      text-shadow: 0 0 10px rgba(0,0,0,0.8);
+    }
+    #overview {
+      margin-top: 10px;
+      font-size: 1.2rem;
+      line-height: 1.4;
+      max-height: 150px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #footer {
+      position: absolute;
+      bottom: 10px;
+      right: 20px;
+      font-size: 0.9rem;
+      opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="overlay">
+      <div id="title">Carregando...</div>
+      <div id="overview"></div>
+    </div>
+    <div id="footer">Fonte: TMDb</div>
+  </div>
+
+  <script>
+    const API_KEY = 'a0162399b1db9f45c75b40cecfb8d8cf'; // substitua aqui pela sua API key TMDb
+    const API_URL = `https://api.themoviedb.org/3/movie/now_playing?api_key=${API_KEY}&language=pt-BR&page=1`;
+    const PROXY_URL = 'https://api.allorigins.win/raw?url=';
+
+    let filmes = [];
+    let indice = 0;
+
+    const container = document.getElementById('container');
+    const titleEl = document.getElementById('title');
+    const overviewEl = document.getElementById('overview');
+
+    async function fetchMovies() {
+      try {
+        const res = await fetch(PROXY_URL + encodeURIComponent(API_URL));
+        const data = await res.json();
+        filmes = data.results;
+        if (filmes.length === 0) {
+          titleEl.textContent = 'Nenhum lançamento encontrado.';
+          return;
+        }
+        indice = Math.floor(Math.random() * filmes.length); // índice aleatório no carregamento
+        showMovie(indice);
+        // Muda o filme a cada 15 segundos
+        setInterval(() => {
+          indice = (indice + 1) % filmes.length;
+          showMovie(indice);
+        }, 15000);
+      } catch (e) {
+        titleEl.textContent = 'Erro ao carregar filmes.';
+        console.error(e);
+      }
+    }
+
+    function showMovie(i) {
+      const filme = filmes[i];
+      // Imagem do filme
+      // URL base para imagem em tamanho grande: https://image.tmdb.org/t/p/original/
+      const imagem = filme.backdrop_path || filme.poster_path;
+      if (imagem) {
+        container.style.backgroundImage = `url('https://image.tmdb.org/t/p/original${imagem}')`;
+      } else {
+        container.style.backgroundImage = 'none';
+        container.style.backgroundColor = '#000';
+      }
+      titleEl.textContent = filme.title || 'Sem título';
+      overviewEl.textContent = filme.overview || '';
+    }
+
+    fetchMovies();
+  </script>
+</body>
+</html>

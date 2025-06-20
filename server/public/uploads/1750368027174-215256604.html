@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Clima Agora – Maracaçumé</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    body {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(90deg);
+      transform-origin: center;
+      width: 100vh;
+      height: 100vw;
+      background: linear-gradient(to bottom, #1e3c72, #2a5298);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+    }
+    #weather-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #icon {
+      width: 200px;
+      height: 200px;
+    }
+    #temp {
+      font-size: 8rem;
+      font-weight: bold;
+      margin: 1rem 0;
+    }
+    #desc {
+      font-size: 2rem;
+      text-transform: capitalize;
+      margin-bottom: 0.5rem;
+    }
+    #location {
+      font-size: 1.5rem;
+      opacity: 0.7;
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <div id="weather-container">
+    <img id="icon" src="" alt="Clima">
+    <div id="temp">--°C</div>
+    <div id="desc">Carregando...</div>
+    <div id="location">Maracaçumé, MA</div>
+  </div>
+
+  <script>
+    async function loadCurrentWeather() {
+      try {
+        const latitude = -3.4347;
+        const longitude = -45.1682;
+
+        const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`);
+        const data = await response.json();
+        const weather = data.current_weather;
+
+        const temp = weather.temperature;
+        const code = weather.weathercode;
+
+        document.getElementById('temp').textContent = `${temp}°C`;
+        document.getElementById('desc').textContent = getDesc(code);
+        document.getElementById('icon').src = getIcon(code);
+
+      } catch (err) {
+        document.getElementById('desc').textContent = "Erro ao carregar clima.";
+        console.error(err);
+      }
+    }
+
+    function getIcon(code) {
+      if (code === 0) return 'https://img.icons8.com/fluency/200/sun.png';
+      if (code <= 3) return 'https://img.icons8.com/fluency/200/partly-cloudy-day.png';
+      if (code <= 48) return 'https://img.icons8.com/fluency/200/fog-day.png';
+      if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return 'https://img.icons8.com/fluency/200/rain.png';
+      if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) return 'https://img.icons8.com/fluency/200/snow.png';
+      if (code >= 95) return 'https://img.icons8.com/fluency/200/storm.png';
+      return 'https://img.icons8.com/fluency/200/weather.png';
+    }
+
+    function getDesc(code) {
+      const descMap = {
+        0: 'Céu limpo',
+        1: 'Poucas nuvens',
+        2: 'Nuvens dispersas',
+        3: 'Nublado',
+        45: 'Neblina',
+        48: 'Neblina com geada',
+        51: 'Chuvisco leve',
+        53: 'Chuvisco moderado',
+        55: 'Chuvisco intenso',
+        61: 'Chuva fraca',
+        63: 'Chuva moderada',
+        65: 'Chuva forte',
+        71: 'Neve fraca',
+        73: 'Neve moderada',
+        75: 'Neve intensa',
+        80: 'Chuva passageira leve',
+        81: 'Chuva passageira',
+        82: 'Chuva passageira forte',
+        95: 'Tempestade',
+        96: 'Tempestade com granizo',
+        99: 'Tempestade severa'
+      };
+      return descMap[code] || 'Clima indefinido';
+    }
+
+    loadCurrentWeather();
+    setInterval(loadCurrentWeather, 600000); // atualiza a cada 10 min
+  </script>
+</body>
+</html>

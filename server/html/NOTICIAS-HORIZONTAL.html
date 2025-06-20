@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TV Indoor - Notícia</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      width: 100vw;
+      background-color: #000;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+
+    .news-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    .news-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+
+    .news-title {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      padding: 30px;
+      font-size: 2.5vw;
+      text-align: center;
+      box-sizing: border-box;
+      z-index: 1;
+    }
+
+    @media (orientation: portrait) {
+      .news-title {
+        font-size: 4vw;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="news-container">
+    <img id="news-image" class="news-image" src="" alt="Imagem da notícia">
+    <div id="news-title" class="news-title">Carregando notícia...</div>
+  </div>
+
+  <script>
+    const feeds = [
+      "https://g1.globo.com/rss/g1/"
+      
+    ];
+
+    const proxy = url => "https://corsproxy.io/?" + encodeURIComponent(url);
+
+    const titleEl = document.getElementById("news-title");
+    const imageEl = document.getElementById("news-image");
+
+    let allNews = [];
+    let currentIndex = 0;
+
+    async function loadFeeds() {
+      allNews = [];
+
+      for (const feed of feeds) {
+        try {
+          const res = await fetch(proxy(feed));
+          const xml = await res.text();
+          const parsed = parseRSS(xml);
+          allNews.push(...parsed);
+        } catch (e) {
+          console.error("Erro ao carregar feed:", feed, e);
+        }
+      }
+
+      if (allNews.length === 0) {
+        titleEl.textContent = "Nenhuma notícia disponível.";
+        return;
+      }
+
+      shuffle(allNews);
+      showNews(0);
+      setInterval(() => showNews(currentIndex + 1), 15000);
+    }
+
+    function parseRSS(xmlText) {
+      const parser = new DOMParser();
+      const xml = parser.parseFromString(xmlText, "application/xml");
+      const items = xml.querySelectorAll("item");
+      let arr = [];
+
+      items.forEach(item => {
+        const title = item.querySelector("title")?.textContent || "Sem título";
+        const description = item.querySelector("description")?.textContent || "";
+        let image = "";
+
+        const media = item.getElementsByTagName("media:content")[0];
+        const enclosure = item.getElementsByTagName("enclosure")[0];
+        if (media?.getAttribute("url")) {
+          image = media.getAttribute("url");
+        } else if (enclosure?.getAttribute("url")) {
+          image = enclosure.getAttribute("url");
+        } else {
+          const match = description.match(/<img[^>]+src="([^">]+)"/);
+          if (match) image = match[1];
+        }
+
+        arr.push({ title, image });
+      });
+
+      return arr;
+    }
+
+    function showNews(index) {
+      currentIndex = (index + allNews.length) % allNews.length;
+      const news = allNews[currentIndex];
+      titleEl.textContent = news.title;
+      imageEl.src = news.image || "";
+      imageEl.style.display = news.image ? "block" : "none";
+    }
+
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }
+
+    loadFeeds();
+  </script>
+</body>
+</html>
